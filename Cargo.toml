@@ -1,0 +1,26 @@
+[package]
+name = "vtracer-swift"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "2.33.3"
+image = "0.23.10"
+visioncortex = { version = "0.8.4" }
+fastrand = "1.8"
+uniffi = { version = "0.26.1", features = ["cli"] }
+thiserror = "1.0.56"
+
+[build-dependencies]
+uniffi = { version = "0.26.1", features = ["build", "cli"] }
+
+[lib]
+name = "vtracer"
+crate-type = ["lib", "staticlib"]
+
+[[bin]]
+features = ["cli"]
+name = "uniffi-bindgen"
+path = "src/uniffi-bindgen.rs"

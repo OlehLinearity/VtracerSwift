@@ -1,0 +1,47 @@
+dictionary PointF64 {
+    f64 x;
+    f64 y;
+};
+
+dictionary PointI32 {
+    i32 x;
+    i32 y;
+};
+
+dictionary Color {
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 a;
+};
+
+dictionary PathF64 {
+    sequence<PointF64> path;
+};
+
+dictionary LCompoundPath {
+    sequence<PathF64> paths;
+};
+
+dictionary LSvgPath {
+    LCompoundPath path;
+    Color color;
+};
+
+dictionary LSvgFile {
+    sequence<LSvgPath> paths;
+    u32 width;
+    u32 height;
+    u32? path_precision;
+};
+
+[Error]
+enum SvgError {
+    "ConversionError",
+};
+
+namespace vtracerlib {
+    [Throws=SvgError]
+    LSvgFile process_image(sequence<u8> image_data, u32 width, u32 height);
+
+};
