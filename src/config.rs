@@ -21,13 +21,13 @@ pub enum Hierarchical {
 pub struct Config {
     pub color_mode: ColorMode,
     pub hierarchical: Hierarchical,
-    pub filter_speckle: usize,
+    pub filter_speckle: u32,
     pub color_precision: i32,
     pub layer_difference: i32,
     pub mode: PathSimplifyMode,
     pub corner_threshold: i32,
     pub length_threshold: f64,
-    pub max_iterations: usize,
+    pub max_iterations: u32,
     pub splice_threshold: i32,
     pub path_precision: Option<u32>,
 }
@@ -150,13 +150,13 @@ impl Config {
         ConverterConfig {
             color_mode: self.color_mode,
             hierarchical: self.hierarchical,
-            filter_speckle_area: self.filter_speckle * self.filter_speckle,
+            filter_speckle_area: (self.filter_speckle * self.filter_speckle) as usize,
             color_precision_loss: 8 - self.color_precision,
             layer_difference: self.layer_difference,
             mode: self.mode,
             corner_threshold: deg2rad(self.corner_threshold),
             length_threshold: self.length_threshold,
-            max_iterations: self.max_iterations,
+            max_iterations: self.max_iterations as usize,
             splice_threshold: deg2rad(self.splice_threshold),
             path_precision: self.path_precision,
         }

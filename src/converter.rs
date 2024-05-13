@@ -195,7 +195,6 @@ fn color_image_to_svg(mut img: ColorImage, config: ConverterConfig) -> Result<Sv
         };
         svg.add_path(paths, cluster.residue_color());
     }
-
     Ok(svg)
 }
 
@@ -220,7 +219,6 @@ fn binary_image_to_svg(img: ColorImage, config: ConverterConfig) -> Result<SvgFi
             svg.add_path(paths, Color::color(&ColorName::Black));
         }
     }
-
     Ok(svg)
 }
 

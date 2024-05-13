@@ -1,3 +1,41 @@
+enum Preset {
+    "Bw",
+    "Poster",
+    "Photo",
+};
+
+enum ColorMode {
+    "Color",
+    "Binary",
+};
+
+enum Hierarchical {
+    "Stacked",
+    "Cutout",
+};
+
+enum PathSimplifyMode {
+    "None",
+    "Polygon",
+    "Spline",
+};
+
+
+/// Converter config
+dictionary Config {
+    ColorMode color_mode;
+    Hierarchical hierarchical;
+    u32 filter_speckle;
+    i32 color_precision;
+    i32 layer_difference;
+    PathSimplifyMode mode;
+    i32 corner_threshold;
+    f64 length_threshold;
+    u32 max_iterations;
+    i32 splice_threshold;
+    u32? path_precision;
+};
+
 dictionary PointF64 {
     f64 x;
     f64 y;
@@ -19,8 +57,23 @@ dictionary PathF64 {
     sequence<PointF64> path;
 };
 
+dictionary PathI32 {
+    sequence<PointI32> path;
+};
+
+dictionary Spline {
+    sequence<PointF64> points;
+};
+
+[Enum]
+interface LCompoundPathElement {
+    PathI32(PathI32 path);
+    PathF64(PathF64 path);
+    Spline(Spline spline);
+};
+
 dictionary LCompoundPath {
-    sequence<PathF64> paths;
+    sequence<LCompoundPathElement> paths;
 };
 
 dictionary LSvgPath {
@@ -42,6 +95,10 @@ enum SvgError {
 
 namespace vtracerlib {
     [Throws=SvgError]
-    LSvgFile process_image(sequence<u8> image_data, u32 width, u32 height);
+    LSvgFile convert_image_to_svg_with_preset(Preset preset, bytes image_data, u32 width, u32 height);
 
+    [Throws=SvgError]
+    LSvgFile convert_image_to_svg(Config config, bytes image_data, u32 width, u32 height);
+
+    string make_svg_string(LSvgFile svg_file);
 };

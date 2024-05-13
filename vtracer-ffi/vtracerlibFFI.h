@@ -51,7 +51,11 @@ typedef struct RustCallStatus {
 typedef void (*UniFfiRustFutureContinuation)(void * _Nonnull, int8_t);
 
 // Scaffolding functions
-RustBuffer uniffi_vtracer_fn_func_process_image(RustBuffer image_data, uint32_t width, uint32_t height, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_vtracer_fn_func_convert_image_to_svg(RustBuffer config, RustBuffer image_data, uint32_t width, uint32_t height, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_vtracer_fn_func_convert_image_to_svg_with_preset(RustBuffer preset, RustBuffer image_data, uint32_t width, uint32_t height, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_vtracer_fn_func_make_svg_string(RustBuffer svg_file, RustCallStatus *_Nonnull out_status
 );
 RustBuffer ffi_vtracer_rustbuffer_alloc(int32_t size, RustCallStatus *_Nonnull out_status
 );
@@ -165,7 +169,13 @@ void ffi_vtracer_rust_future_free_void(void* _Nonnull handle
 );
 void ffi_vtracer_rust_future_complete_void(void* _Nonnull handle, RustCallStatus *_Nonnull out_status
 );
-uint16_t uniffi_vtracer_checksum_func_process_image(void
+uint16_t uniffi_vtracer_checksum_func_convert_image_to_svg(void
+    
+);
+uint16_t uniffi_vtracer_checksum_func_convert_image_to_svg_with_preset(void
+    
+);
+uint16_t uniffi_vtracer_checksum_func_make_svg_string(void
     
 );
 uint32_t ffi_vtracer_uniffi_contract_version(void

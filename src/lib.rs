@@ -18,34 +18,52 @@ use std::fmt;
 
 pub use config::*;
 pub use converter::*;
+use image::io::Reader;
 pub use svg::*;
-use uniffi::FfiConverter;
 use visioncortex::Color;
 pub use visioncortex::ColorImage;
 use visioncortex::CompoundPath;
 use visioncortex::CompoundPathElement;
 use visioncortex::Path;
 use visioncortex::PathF64;
+use visioncortex::PathI32;
 use visioncortex::PathSimplifyMode;
 use visioncortex::PointF64;
 use visioncortex::PointI32;
+use visioncortex::PointType;
+use visioncortex::Spline;
+use std::io::Cursor;
+use std::alloc;
+use cap::Cap;
+
+
+// #[global_allocator]
+// static ALLOCATOR: Cap<alloc::System> = Cap::new(alloc::System, usize::max_value());
+
 #[derive(Debug, thiserror::Error)]
-enum SvgError {
+pub enum SvgError {
     #[error("{0}")]
     ConversionError(String),
 }
-struct LSvgFile {
+pub struct LSvgFile {
     paths: Vec<LSvgPath>,
     width: u32,
     height: u32,
     path_precision: Option<u32>,
 }
-struct LSvgPath {
+pub struct LSvgPath {
     path: LCompoundPath,
     color: Color,
 }
-struct LCompoundPath {
-    paths: Vec<PathF64>,
+
+pub struct LCompoundPath {
+    paths: Vec<LCompoundPathElement>,
+}
+
+pub enum LCompoundPathElement {
+    PathI32 { path: PathI32 },
+    PathF64 { path: PathF64 },
+    Spline { spline: Spline },
 }
 
 impl LSvgFile {
@@ -78,27 +96,45 @@ impl LCompoundPath {
             paths: compound_path
                 .paths
                 .into_iter()
-                .map(|el| el.convert_to_path_f64())
+                .map(|el| match el {
+                    CompoundPathElement::PathI32(p) => LCompoundPathElement::PathI32 { path: p },
+                    CompoundPathElement::PathF64(p) => LCompoundPathElement::PathF64 { path: p },
+                    CompoundPathElement::Spline(p) => LCompoundPathElement::Spline { spline: p },
+                })
                 .collect(),
         }
     }
 
-    fn to_svg_string(
-        &self,
-        close: bool,
-        offset: PointF64,
-        precision: Option<u32>,
-    ) -> (String, PointF64) {
+    pub fn to_svg_string<P>(&self, close: bool, offset: P, precision: Option<u32>) -> (String, P)
+    where
+        P: PointType + std::ops::Sub<Output = P>,
+    {
         let origin = if !self.paths.is_empty() {
-            PointF64::default() - self.paths[0].path[0]
+            match &self.paths[0] {
+                LCompoundPathElement::PathI32 { path } => P::default() - path[0].to::<P>(),
+                LCompoundPathElement::PathF64 { path } => P::default() - path[0].to::<P>(),
+                LCompoundPathElement::Spline { spline } => {
+                    P::default() - spline.points[0].to::<P>()
+                }
+            }
         } else {
-            PointF64::default()
+            P::default()
         };
 
         let string = self
             .paths
             .iter()
-            .map(|p| p.to_svg_string(close, &origin, precision))
+            .map(|p| match p {
+                LCompoundPathElement::PathI32 { path } => {
+                    path.to_svg_string(close, &origin.to_point_i32(), precision)
+                }
+                LCompoundPathElement::PathF64 { path } => {
+                    path.to_svg_string(close, &origin.to_point_f64(), precision)
+                }
+                LCompoundPathElement::Spline { spline } => {
+                    spline.to_svg_string(close, &origin.to_point_f64(), precision)
+                }
+            })
             .collect::<String>();
 
         (string, offset - origin)
@@ -164,23 +200,44 @@ impl LSvgPath {
     }
 }
 
-fn process_image(image_data: Vec<u8>, width: u32, height: u32) -> Result<LSvgFile, SvgError> {
-    let mut hardcoded_config = Config::from_preset(Preset::Photo);
-    hardcoded_config.mode = PathSimplifyMode::Polygon;
+pub fn convert_image_to_svg_with_preset(
+    preset: Preset,
+    image_data: Vec<u8>,
+    width: u32,
+    height: u32,
+) -> Result<LSvgFile, SvgError> {
+    let config = Config::from_preset(preset);
+    convert_image_to_svg(config, image_data, width, height)
+}
+
+pub fn convert_image_to_svg(
+    config: Config,
+    image_data: Vec<u8>,
+    width: u32,
+    height: u32,
+) -> Result<LSvgFile, SvgError> {
+    // ALLOCATOR.set_limit(400 * 1024 * 1024).unwrap();
+    let image_result = Reader::new(Cursor::new(image_data))
+        .with_guessed_format()
+        .unwrap()
+        .decode()
+        .map_err(|e| SvgError::ConversionError(e.to_string()))?;
+    let pixels = image_result.to_rgba8().into_vec();
+    
     let color_image = ColorImage {
-        pixels: image_data,
+        pixels: pixels,
         width: width as usize,
         height: height as usize,
     };
 
-    let result = match convert(color_image, hardcoded_config) {
+    let result = match convert(color_image, config) {
         Ok(svg_file) => Ok(LSvgFile::from_svg_file(svg_file)),
         Err(error) => Err(SvgError::ConversionError(error)),
     };
 
-    if let Ok(ref svg_file) = result {
-        print!("{svg_file}")
-    }
-
     result
+}
+
+pub fn make_svg_string(svg_file: LSvgFile) -> String {
+    svg_file.to_string()
 }

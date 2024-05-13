@@ -6,10 +6,10 @@ import Foundation
 // might be in a separate module, or it might be compiled inline into
 // this module. This is a bit of light hackery to work with both.
 #if canImport(vtracerlibFFI)
-import vtracerlibFFI
+    import vtracerlibFFI
 #endif
 
-fileprivate extension RustBuffer {
+private extension RustBuffer {
     // Allocate a new buffer, copying the contents of a `UInt8` array.
     init(bytes: [UInt8]) {
         let rbuf = bytes.withUnsafeBufferPointer { ptr in
@@ -29,7 +29,7 @@ fileprivate extension RustBuffer {
     }
 }
 
-fileprivate extension ForeignBytes {
+private extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
@@ -42,7 +42,7 @@ fileprivate extension ForeignBytes {
 // Helper classes/extensions that don't change.
 // Someday, this will be in a library of its own.
 
-fileprivate extension Data {
+private extension Data {
     init(rustBuffer: RustBuffer) {
         // TODO: This copies the buffer. Can we read directly from a
         // Rust buffer?
@@ -64,15 +64,15 @@ fileprivate extension Data {
 //
 // Instead, the read() method and these helper functions input a tuple of data
 
-fileprivate func createReader(data: Data) -> (data: Data, offset: Data.Index) {
+private func createReader(data: Data) -> (data: Data, offset: Data.Index) {
     (data: data, offset: 0)
 }
 
 // Reads an integer at the current offset, in big-endian order, and advances
 // the offset on success. Throws if reading the integer would move the
 // offset past the end of the buffer.
-fileprivate func readInt<T: FixedWidthInteger>(_ reader: inout (data: Data, offset: Data.Index)) throws -> T {
-    let range = reader.offset..<reader.offset + MemoryLayout<T>.size
+private func readInt<T: FixedWidthInteger>(_ reader: inout (data: Data, offset: Data.Index)) throws -> T {
+    let range = reader.offset ..< reader.offset + MemoryLayout<T>.size
     guard reader.data.count >= range.upperBound else {
         throw UniffiInternalError.bufferOverflow
     }
@@ -82,38 +82,38 @@ fileprivate func readInt<T: FixedWidthInteger>(_ reader: inout (data: Data, offs
         return value as! T
     }
     var value: T = 0
-    let _ = withUnsafeMutableBytes(of: &value, { reader.data.copyBytes(to: $0, from: range)})
+    let _ = withUnsafeMutableBytes(of: &value) { reader.data.copyBytes(to: $0, from: range) }
     reader.offset = range.upperBound
     return value.bigEndian
 }
 
 // Reads an arbitrary number of bytes, to be used to read
 // raw bytes, this is useful when lifting strings
-fileprivate func readBytes(_ reader: inout (data: Data, offset: Data.Index), count: Int) throws -> Array<UInt8> {
-    let range = reader.offset..<(reader.offset+count)
+private func readBytes(_ reader: inout (data: Data, offset: Data.Index), count: Int) throws -> [UInt8] {
+    let range = reader.offset ..< (reader.offset + count)
     guard reader.data.count >= range.upperBound else {
         throw UniffiInternalError.bufferOverflow
     }
     var value = [UInt8](repeating: 0, count: count)
-    value.withUnsafeMutableBufferPointer({ buffer in
+    value.withUnsafeMutableBufferPointer { buffer in
         reader.data.copyBytes(to: buffer, from: range)
-    })
+    }
     reader.offset = range.upperBound
     return value
 }
 
 // Reads a float at the current offset.
-fileprivate func readFloat(_ reader: inout (data: Data, offset: Data.Index)) throws -> Float {
-    return Float(bitPattern: try readInt(&reader))
+private func readFloat(_ reader: inout (data: Data, offset: Data.Index)) throws -> Float {
+    return try Float(bitPattern: readInt(&reader))
 }
 
 // Reads a float at the current offset.
-fileprivate func readDouble(_ reader: inout (data: Data, offset: Data.Index)) throws -> Double {
-    return Double(bitPattern: try readInt(&reader))
+private func readDouble(_ reader: inout (data: Data, offset: Data.Index)) throws -> Double {
+    return try Double(bitPattern: readInt(&reader))
 }
 
 // Indicates if the offset has reached the end of the buffer.
-fileprivate func hasRemaining(_ reader: (data: Data, offset: Data.Index)) -> Bool {
+private func hasRemaining(_ reader: (data: Data, offset: Data.Index)) -> Bool {
     return reader.offset < reader.data.count
 }
 
@@ -121,11 +121,11 @@ fileprivate func hasRemaining(_ reader: (data: Data, offset: Data.Index)) -> Boo
 // struct, but we use standalone functions instead in order to make external
 // types work.  See the above discussion on Readers for details.
 
-fileprivate func createWriter() -> [UInt8] {
+private func createWriter() -> [UInt8] {
     return []
 }
 
-fileprivate func writeBytes<S>(_ writer: inout [UInt8], _ byteArr: S) where S: Sequence, S.Element == UInt8 {
+private func writeBytes<S>(_ writer: inout [UInt8], _ byteArr: S) where S: Sequence, S.Element == UInt8 {
     writer.append(contentsOf: byteArr)
 }
 
@@ -133,22 +133,22 @@ fileprivate func writeBytes<S>(_ writer: inout [UInt8], _ byteArr: S) where S: S
 //
 // Warning: make sure what you are trying to write
 // is in the correct type!
-fileprivate func writeInt<T: FixedWidthInteger>(_ writer: inout [UInt8], _ value: T) {
+private func writeInt<T: FixedWidthInteger>(_ writer: inout [UInt8], _ value: T) {
     var value = value.bigEndian
     withUnsafeBytes(of: &value) { writer.append(contentsOf: $0) }
 }
 
-fileprivate func writeFloat(_ writer: inout [UInt8], _ value: Float) {
+private func writeFloat(_ writer: inout [UInt8], _ value: Float) {
     writeInt(&writer, value.bitPattern)
 }
 
-fileprivate func writeDouble(_ writer: inout [UInt8], _ value: Double) {
+private func writeDouble(_ writer: inout [UInt8], _ value: Double) {
     writeInt(&writer, value.bitPattern)
 }
 
 // Protocol for types that transfer other types across the FFI. This is
 // analogous go the Rust trait of the same name.
-fileprivate protocol FfiConverter {
+private protocol FfiConverter {
     associatedtype FfiType
     associatedtype SwiftType
 
@@ -159,7 +159,7 @@ fileprivate protocol FfiConverter {
 }
 
 // Types conforming to `Primitive` pass themselves directly over the FFI.
-fileprivate protocol FfiConverterPrimitive: FfiConverter where FfiType == SwiftType { }
+private protocol FfiConverterPrimitive: FfiConverter where FfiType == SwiftType {}
 
 extension FfiConverterPrimitive {
     public static func lift(_ value: FfiType) throws -> SwiftType {
@@ -173,7 +173,7 @@ extension FfiConverterPrimitive {
 
 // Types conforming to `FfiConverterRustBuffer` lift and lower into a `RustBuffer`.
 // Used for complex types where it's hard to write a custom lift/lower.
-fileprivate protocol FfiConverterRustBuffer: FfiConverter where FfiType == RustBuffer {}
+private protocol FfiConverterRustBuffer: FfiConverter where FfiType == RustBuffer {}
 
 extension FfiConverterRustBuffer {
     public static func lift(_ buf: RustBuffer) throws -> SwiftType {
@@ -187,14 +187,15 @@ extension FfiConverterRustBuffer {
     }
 
     public static func lower(_ value: SwiftType) -> RustBuffer {
-          var writer = createWriter()
-          write(value, into: &writer)
-          return RustBuffer(bytes: writer)
+        var writer = createWriter()
+        write(value, into: &writer)
+        return RustBuffer(bytes: writer)
     }
 }
+
 // An error type for FFI errors. These errors occur at the UniFFI level, not
 // the library level.
-fileprivate enum UniffiInternalError: LocalizedError {
+private enum UniffiInternalError: LocalizedError {
     case bufferOverflow
     case incompleteData
     case unexpectedOptionalTag
@@ -220,16 +221,16 @@ fileprivate enum UniffiInternalError: LocalizedError {
     }
 }
 
-fileprivate let CALL_SUCCESS: Int8 = 0
-fileprivate let CALL_ERROR: Int8 = 1
-fileprivate let CALL_PANIC: Int8 = 2
-fileprivate let CALL_CANCELLED: Int8 = 3
+private let CALL_SUCCESS: Int8 = 0
+private let CALL_ERROR: Int8 = 1
+private let CALL_PANIC: Int8 = 2
+private let CALL_CANCELLED: Int8 = 3
 
-fileprivate extension RustCallStatus {
+private extension RustCallStatus {
     init() {
         self.init(
             code: CALL_SUCCESS,
-            errorBuf: RustBuffer.init(
+            errorBuf: RustBuffer(
                 capacity: 0,
                 len: 0,
                 data: nil
@@ -244,7 +245,8 @@ private func rustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) -> T
 
 private func rustCallWithError<T>(
     _ errorHandler: @escaping (RustBuffer) throws -> Error,
-    _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T) throws -> T {
+    _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T
+) throws -> T {
     try makeRustCall(callback, errorHandler: errorHandler)
 }
 
@@ -253,7 +255,7 @@ private func makeRustCall<T>(
     errorHandler: ((RustBuffer) throws -> Error)?
 ) throws -> T {
     uniffiEnsureInitialized()
-    var callStatus = RustCallStatus.init()
+    var callStatus = RustCallStatus()
     let returnedVal = callback(&callStatus)
     try uniffiCheckCallStatus(callStatus: callStatus, errorHandler: errorHandler)
     return returnedVal
@@ -264,40 +266,39 @@ private func uniffiCheckCallStatus(
     errorHandler: ((RustBuffer) throws -> Error)?
 ) throws {
     switch callStatus.code {
-        case CALL_SUCCESS:
-            return
+    case CALL_SUCCESS:
+        return
 
-        case CALL_ERROR:
-            if let errorHandler = errorHandler {
-                throw try errorHandler(callStatus.errorBuf)
-            } else {
-                callStatus.errorBuf.deallocate()
-                throw UniffiInternalError.unexpectedRustCallError
-            }
+    case CALL_ERROR:
+        if let errorHandler = errorHandler {
+            throw try errorHandler(callStatus.errorBuf)
+        } else {
+            callStatus.errorBuf.deallocate()
+            throw UniffiInternalError.unexpectedRustCallError
+        }
 
-        case CALL_PANIC:
-            // When the rust code sees a panic, it tries to construct a RustBuffer
-            // with the message.  But if that code panics, then it just sends back
-            // an empty buffer.
-            if callStatus.errorBuf.len > 0 {
-                throw UniffiInternalError.rustPanic(try FfiConverterString.lift(callStatus.errorBuf))
-            } else {
-                callStatus.errorBuf.deallocate()
-                throw UniffiInternalError.rustPanic("Rust panic")
-            }
+    case CALL_PANIC:
+        // When the rust code sees a panic, it tries to construct a RustBuffer
+        // with the message.  But if that code panics, then it just sends back
+        // an empty buffer.
+        if callStatus.errorBuf.len > 0 {
+            throw try UniffiInternalError.rustPanic(FfiConverterString.lift(callStatus.errorBuf))
+        } else {
+            callStatus.errorBuf.deallocate()
+            throw UniffiInternalError.rustPanic("Rust panic")
+        }
 
-        case CALL_CANCELLED:
-            fatalError("Cancellation not supported yet")
+    case CALL_CANCELLED:
+        fatalError("Cancellation not supported yet")
 
-        default:
-            throw UniffiInternalError.unexpectedRustCallStatusCode
+    default:
+        throw UniffiInternalError.unexpectedRustCallStatusCode
     }
 }
 
 // Public interface members begin here.
 
-
-fileprivate struct FfiConverterUInt8: FfiConverterPrimitive {
+private struct FfiConverterUInt8: FfiConverterPrimitive {
     typealias FfiType = UInt8
     typealias SwiftType = UInt8
 
@@ -310,7 +311,7 @@ fileprivate struct FfiConverterUInt8: FfiConverterPrimitive {
     }
 }
 
-fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
+private struct FfiConverterUInt32: FfiConverterPrimitive {
     typealias FfiType = UInt32
     typealias SwiftType = UInt32
 
@@ -323,7 +324,7 @@ fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
     }
 }
 
-fileprivate struct FfiConverterInt32: FfiConverterPrimitive {
+private struct FfiConverterInt32: FfiConverterPrimitive {
     typealias FfiType = Int32
     typealias SwiftType = Int32
 
@@ -336,7 +337,7 @@ fileprivate struct FfiConverterInt32: FfiConverterPrimitive {
     }
 }
 
-fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
+private struct FfiConverterDouble: FfiConverterPrimitive {
     typealias FfiType = Double
     typealias SwiftType = Double
 
@@ -349,7 +350,7 @@ fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
     }
 }
 
-fileprivate struct FfiConverterString: FfiConverter {
+private struct FfiConverterString: FfiConverter {
     typealias SwiftType = String
     typealias FfiType = RustBuffer
 
@@ -377,7 +378,7 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        return try String(bytes: readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -387,6 +388,20 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
+private struct FfiConverterData: FfiConverterRustBuffer {
+    typealias SwiftType = Data
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        let len: Int32 = try readInt(&buf)
+        return try Data(readBytes(&buf, count: Int(len)))
+    }
+
+    public static func write(_ value: Data, into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        writeBytes(&buf, value)
+    }
+}
 
 public struct Color {
     public var r: UInt8
@@ -397,10 +412,11 @@ public struct Color {
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
-        r: UInt8, 
-        g: UInt8, 
-        b: UInt8, 
-        a: UInt8) {
+        r: UInt8,
+        g: UInt8,
+        b: UInt8,
+        a: UInt8
+    ) {
         self.r = r
         self.g = g
         self.b = b
@@ -408,9 +424,8 @@ public struct Color {
     }
 }
 
-
 extension Color: Equatable, Hashable {
-    public static func ==(lhs: Color, rhs: Color) -> Bool {
+    public static func == (lhs: Color, rhs: Color) -> Bool {
         if lhs.r != rhs.r {
             return false
         }
@@ -434,16 +449,15 @@ extension Color: Equatable, Hashable {
     }
 }
 
-
 public struct FfiConverterTypeColor: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Color {
         return
             try Color(
-                r: FfiConverterUInt8.read(from: &buf), 
-                g: FfiConverterUInt8.read(from: &buf), 
-                b: FfiConverterUInt8.read(from: &buf), 
+                r: FfiConverterUInt8.read(from: &buf),
+                g: FfiConverterUInt8.read(from: &buf),
+                b: FfiConverterUInt8.read(from: &buf),
                 a: FfiConverterUInt8.read(from: &buf)
-        )
+            )
     }
 
     public static func write(_ value: Color, into buf: inout [UInt8]) {
@@ -454,7 +468,6 @@ public struct FfiConverterTypeColor: FfiConverterRustBuffer {
     }
 }
 
-
 public func FfiConverterTypeColor_lift(_ buf: RustBuffer) throws -> Color {
     return try FfiConverterTypeColor.lift(buf)
 }
@@ -463,21 +476,159 @@ public func FfiConverterTypeColor_lower(_ value: Color) -> RustBuffer {
     return FfiConverterTypeColor.lower(value)
 }
 
-
-public struct LCompoundPath {
-    public var paths: [PathF64]
+/**
+ * Converter config
+ */
+public struct Config {
+    public var colorMode: ColorMode
+    public var hierarchical: Hierarchical
+    public var filterSpeckle: UInt32
+    public var colorPrecision: Int32
+    public var layerDifference: Int32
+    public var mode: PathSimplifyMode
+    public var cornerThreshold: Int32
+    public var lengthThreshold: Double
+    public var maxIterations: UInt32
+    public var spliceThreshold: Int32
+    public var pathPrecision: UInt32?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
-        paths: [PathF64]) {
+        colorMode: ColorMode,
+        hierarchical: Hierarchical,
+        filterSpeckle: UInt32,
+        colorPrecision: Int32,
+        layerDifference: Int32,
+        mode: PathSimplifyMode,
+        cornerThreshold: Int32,
+        lengthThreshold: Double,
+        maxIterations: UInt32,
+        spliceThreshold: Int32,
+        pathPrecision: UInt32?
+    ) {
+        self.colorMode = colorMode
+        self.hierarchical = hierarchical
+        self.filterSpeckle = filterSpeckle
+        self.colorPrecision = colorPrecision
+        self.layerDifference = layerDifference
+        self.mode = mode
+        self.cornerThreshold = cornerThreshold
+        self.lengthThreshold = lengthThreshold
+        self.maxIterations = maxIterations
+        self.spliceThreshold = spliceThreshold
+        self.pathPrecision = pathPrecision
+    }
+}
+
+extension Config: Equatable, Hashable {
+    public static func == (lhs: Config, rhs: Config) -> Bool {
+        if lhs.colorMode != rhs.colorMode {
+            return false
+        }
+        if lhs.hierarchical != rhs.hierarchical {
+            return false
+        }
+        if lhs.filterSpeckle != rhs.filterSpeckle {
+            return false
+        }
+        if lhs.colorPrecision != rhs.colorPrecision {
+            return false
+        }
+        if lhs.layerDifference != rhs.layerDifference {
+            return false
+        }
+        if lhs.mode != rhs.mode {
+            return false
+        }
+        if lhs.cornerThreshold != rhs.cornerThreshold {
+            return false
+        }
+        if lhs.lengthThreshold != rhs.lengthThreshold {
+            return false
+        }
+        if lhs.maxIterations != rhs.maxIterations {
+            return false
+        }
+        if lhs.spliceThreshold != rhs.spliceThreshold {
+            return false
+        }
+        if lhs.pathPrecision != rhs.pathPrecision {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(colorMode)
+        hasher.combine(hierarchical)
+        hasher.combine(filterSpeckle)
+        hasher.combine(colorPrecision)
+        hasher.combine(layerDifference)
+        hasher.combine(mode)
+        hasher.combine(cornerThreshold)
+        hasher.combine(lengthThreshold)
+        hasher.combine(maxIterations)
+        hasher.combine(spliceThreshold)
+        hasher.combine(pathPrecision)
+    }
+}
+
+public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Config {
+        return
+            try Config(
+                colorMode: FfiConverterTypeColorMode.read(from: &buf),
+                hierarchical: FfiConverterTypeHierarchical.read(from: &buf),
+                filterSpeckle: FfiConverterUInt32.read(from: &buf),
+                colorPrecision: FfiConverterInt32.read(from: &buf),
+                layerDifference: FfiConverterInt32.read(from: &buf),
+                mode: FfiConverterTypePathSimplifyMode.read(from: &buf),
+                cornerThreshold: FfiConverterInt32.read(from: &buf),
+                lengthThreshold: FfiConverterDouble.read(from: &buf),
+                maxIterations: FfiConverterUInt32.read(from: &buf),
+                spliceThreshold: FfiConverterInt32.read(from: &buf),
+                pathPrecision: FfiConverterOptionUInt32.read(from: &buf)
+            )
+    }
+
+    public static func write(_ value: Config, into buf: inout [UInt8]) {
+        FfiConverterTypeColorMode.write(value.colorMode, into: &buf)
+        FfiConverterTypeHierarchical.write(value.hierarchical, into: &buf)
+        FfiConverterUInt32.write(value.filterSpeckle, into: &buf)
+        FfiConverterInt32.write(value.colorPrecision, into: &buf)
+        FfiConverterInt32.write(value.layerDifference, into: &buf)
+        FfiConverterTypePathSimplifyMode.write(value.mode, into: &buf)
+        FfiConverterInt32.write(value.cornerThreshold, into: &buf)
+        FfiConverterDouble.write(value.lengthThreshold, into: &buf)
+        FfiConverterUInt32.write(value.maxIterations, into: &buf)
+        FfiConverterInt32.write(value.spliceThreshold, into: &buf)
+        FfiConverterOptionUInt32.write(value.pathPrecision, into: &buf)
+    }
+}
+
+public func FfiConverterTypeConfig_lift(_ buf: RustBuffer) throws -> Config {
+    return try FfiConverterTypeConfig.lift(buf)
+}
+
+public func FfiConverterTypeConfig_lower(_ value: Config) -> RustBuffer {
+    return FfiConverterTypeConfig.lower(value)
+}
+
+public struct LCompoundPath {
+    public var paths: [LCompoundPathElement]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        paths: [LCompoundPathElement])
+    {
         self.paths = paths
     }
 }
 
-
 extension LCompoundPath: Equatable, Hashable {
-    public static func ==(lhs: LCompoundPath, rhs: LCompoundPath) -> Bool {
+    public static func == (lhs: LCompoundPath, rhs: LCompoundPath) -> Bool {
         if lhs.paths != rhs.paths {
             return false
         }
@@ -489,20 +640,18 @@ extension LCompoundPath: Equatable, Hashable {
     }
 }
 
-
 public struct FfiConverterTypeLCompoundPath: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LCompoundPath {
         return
             try LCompoundPath(
-                paths: FfiConverterSequenceTypePathF64.read(from: &buf)
-        )
+                paths: FfiConverterSequenceTypeLCompoundPathElement.read(from: &buf)
+            )
     }
 
     public static func write(_ value: LCompoundPath, into buf: inout [UInt8]) {
-        FfiConverterSequenceTypePathF64.write(value.paths, into: &buf)
+        FfiConverterSequenceTypeLCompoundPathElement.write(value.paths, into: &buf)
     }
 }
-
 
 public func FfiConverterTypeLCompoundPath_lift(_ buf: RustBuffer) throws -> LCompoundPath {
     return try FfiConverterTypeLCompoundPath.lift(buf)
@@ -511,7 +660,6 @@ public func FfiConverterTypeLCompoundPath_lift(_ buf: RustBuffer) throws -> LCom
 public func FfiConverterTypeLCompoundPath_lower(_ value: LCompoundPath) -> RustBuffer {
     return FfiConverterTypeLCompoundPath.lower(value)
 }
-
 
 public struct LSvgFile {
     public var paths: [LSvgPath]
@@ -522,10 +670,11 @@ public struct LSvgFile {
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
-        paths: [LSvgPath], 
-        width: UInt32, 
-        height: UInt32, 
-        pathPrecision: UInt32?) {
+        paths: [LSvgPath],
+        width: UInt32,
+        height: UInt32,
+        pathPrecision: UInt32?
+    ) {
         self.paths = paths
         self.width = width
         self.height = height
@@ -533,9 +682,8 @@ public struct LSvgFile {
     }
 }
 
-
 extension LSvgFile: Equatable, Hashable {
-    public static func ==(lhs: LSvgFile, rhs: LSvgFile) -> Bool {
+    public static func == (lhs: LSvgFile, rhs: LSvgFile) -> Bool {
         if lhs.paths != rhs.paths {
             return false
         }
@@ -559,16 +707,15 @@ extension LSvgFile: Equatable, Hashable {
     }
 }
 
-
 public struct FfiConverterTypeLSvgFile: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LSvgFile {
         return
             try LSvgFile(
-                paths: FfiConverterSequenceTypeLSvgPath.read(from: &buf), 
-                width: FfiConverterUInt32.read(from: &buf), 
-                height: FfiConverterUInt32.read(from: &buf), 
+                paths: FfiConverterSequenceTypeLSvgPath.read(from: &buf),
+                width: FfiConverterUInt32.read(from: &buf),
+                height: FfiConverterUInt32.read(from: &buf),
                 pathPrecision: FfiConverterOptionUInt32.read(from: &buf)
-        )
+            )
     }
 
     public static func write(_ value: LSvgFile, into buf: inout [UInt8]) {
@@ -579,7 +726,6 @@ public struct FfiConverterTypeLSvgFile: FfiConverterRustBuffer {
     }
 }
 
-
 public func FfiConverterTypeLSvgFile_lift(_ buf: RustBuffer) throws -> LSvgFile {
     return try FfiConverterTypeLSvgFile.lift(buf)
 }
@@ -588,7 +734,6 @@ public func FfiConverterTypeLSvgFile_lower(_ value: LSvgFile) -> RustBuffer {
     return FfiConverterTypeLSvgFile.lower(value)
 }
 
-
 public struct LSvgPath {
     public var path: LCompoundPath
     public var color: Color
@@ -596,16 +741,16 @@ public struct LSvgPath {
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
-        path: LCompoundPath, 
-        color: Color) {
+        path: LCompoundPath,
+        color: Color
+    ) {
         self.path = path
         self.color = color
     }
 }
 
-
 extension LSvgPath: Equatable, Hashable {
-    public static func ==(lhs: LSvgPath, rhs: LSvgPath) -> Bool {
+    public static func == (lhs: LSvgPath, rhs: LSvgPath) -> Bool {
         if lhs.path != rhs.path {
             return false
         }
@@ -621,14 +766,13 @@ extension LSvgPath: Equatable, Hashable {
     }
 }
 
-
 public struct FfiConverterTypeLSvgPath: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LSvgPath {
         return
             try LSvgPath(
-                path: FfiConverterTypeLCompoundPath.read(from: &buf), 
+                path: FfiConverterTypeLCompoundPath.read(from: &buf),
                 color: FfiConverterTypeColor.read(from: &buf)
-        )
+            )
     }
 
     public static func write(_ value: LSvgPath, into buf: inout [UInt8]) {
@@ -636,7 +780,6 @@ public struct FfiConverterTypeLSvgPath: FfiConverterRustBuffer {
         FfiConverterTypeColor.write(value.color, into: &buf)
     }
 }
-
 
 public func FfiConverterTypeLSvgPath_lift(_ buf: RustBuffer) throws -> LSvgPath {
     return try FfiConverterTypeLSvgPath.lift(buf)
@@ -646,21 +789,20 @@ public func FfiConverterTypeLSvgPath_lower(_ value: LSvgPath) -> RustBuffer {
     return FfiConverterTypeLSvgPath.lower(value)
 }
 
-
 public struct PathF64 {
     public var path: [PointF64]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
-        path: [PointF64]) {
+        path: [PointF64])
+    {
         self.path = path
     }
 }
 
-
 extension PathF64: Equatable, Hashable {
-    public static func ==(lhs: PathF64, rhs: PathF64) -> Bool {
+    public static func == (lhs: PathF64, rhs: PathF64) -> Bool {
         if lhs.path != rhs.path {
             return false
         }
@@ -672,20 +814,18 @@ extension PathF64: Equatable, Hashable {
     }
 }
 
-
 public struct FfiConverterTypePathF64: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PathF64 {
         return
             try PathF64(
                 path: FfiConverterSequenceTypePointF64.read(from: &buf)
-        )
+            )
     }
 
     public static func write(_ value: PathF64, into buf: inout [UInt8]) {
         FfiConverterSequenceTypePointF64.write(value.path, into: &buf)
     }
 }
-
 
 public func FfiConverterTypePathF64_lift(_ buf: RustBuffer) throws -> PathF64 {
     return try FfiConverterTypePathF64.lift(buf)
@@ -695,6 +835,51 @@ public func FfiConverterTypePathF64_lower(_ value: PathF64) -> RustBuffer {
     return FfiConverterTypePathF64.lower(value)
 }
 
+public struct PathI32 {
+    public var path: [PointI32]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        path: [PointI32])
+    {
+        self.path = path
+    }
+}
+
+extension PathI32: Equatable, Hashable {
+    public static func == (lhs: PathI32, rhs: PathI32) -> Bool {
+        if lhs.path != rhs.path {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(path)
+    }
+}
+
+public struct FfiConverterTypePathI32: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PathI32 {
+        return
+            try PathI32(
+                path: FfiConverterSequenceTypePointI32.read(from: &buf)
+            )
+    }
+
+    public static func write(_ value: PathI32, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypePointI32.write(value.path, into: &buf)
+    }
+}
+
+public func FfiConverterTypePathI32_lift(_ buf: RustBuffer) throws -> PathI32 {
+    return try FfiConverterTypePathI32.lift(buf)
+}
+
+public func FfiConverterTypePathI32_lower(_ value: PathI32) -> RustBuffer {
+    return FfiConverterTypePathI32.lower(value)
+}
 
 public struct PointF64 {
     public var x: Double
@@ -703,16 +888,16 @@ public struct PointF64 {
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
-        x: Double, 
-        y: Double) {
+        x: Double,
+        y: Double
+    ) {
         self.x = x
         self.y = y
     }
 }
 
-
 extension PointF64: Equatable, Hashable {
-    public static func ==(lhs: PointF64, rhs: PointF64) -> Bool {
+    public static func == (lhs: PointF64, rhs: PointF64) -> Bool {
         if lhs.x != rhs.x {
             return false
         }
@@ -728,14 +913,13 @@ extension PointF64: Equatable, Hashable {
     }
 }
 
-
 public struct FfiConverterTypePointF64: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PointF64 {
         return
             try PointF64(
-                x: FfiConverterDouble.read(from: &buf), 
+                x: FfiConverterDouble.read(from: &buf),
                 y: FfiConverterDouble.read(from: &buf)
-        )
+            )
     }
 
     public static func write(_ value: PointF64, into buf: inout [UInt8]) {
@@ -743,7 +927,6 @@ public struct FfiConverterTypePointF64: FfiConverterRustBuffer {
         FfiConverterDouble.write(value.y, into: &buf)
     }
 }
-
 
 public func FfiConverterTypePointF64_lift(_ buf: RustBuffer) throws -> PointF64 {
     return try FfiConverterTypePointF64.lift(buf)
@@ -753,7 +936,6 @@ public func FfiConverterTypePointF64_lower(_ value: PointF64) -> RustBuffer {
     return FfiConverterTypePointF64.lower(value)
 }
 
-
 public struct PointI32 {
     public var x: Int32
     public var y: Int32
@@ -761,16 +943,16 @@ public struct PointI32 {
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
-        x: Int32, 
-        y: Int32) {
+        x: Int32,
+        y: Int32
+    ) {
         self.x = x
         self.y = y
     }
 }
 
-
 extension PointI32: Equatable, Hashable {
-    public static func ==(lhs: PointI32, rhs: PointI32) -> Bool {
+    public static func == (lhs: PointI32, rhs: PointI32) -> Bool {
         if lhs.x != rhs.x {
             return false
         }
@@ -786,14 +968,13 @@ extension PointI32: Equatable, Hashable {
     }
 }
 
-
 public struct FfiConverterTypePointI32: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PointI32 {
         return
             try PointI32(
-                x: FfiConverterInt32.read(from: &buf), 
+                x: FfiConverterInt32.read(from: &buf),
                 y: FfiConverterInt32.read(from: &buf)
-        )
+            )
     }
 
     public static func write(_ value: PointI32, into buf: inout [UInt8]) {
@@ -801,7 +982,6 @@ public struct FfiConverterTypePointI32: FfiConverterRustBuffer {
         FfiConverterInt32.write(value.y, into: &buf)
     }
 }
-
 
 public func FfiConverterTypePointI32_lift(_ buf: RustBuffer) throws -> PointI32 {
     return try FfiConverterTypePointI32.lift(buf)
@@ -811,19 +991,302 @@ public func FfiConverterTypePointI32_lower(_ value: PointI32) -> RustBuffer {
     return FfiConverterTypePointI32.lower(value)
 }
 
+public struct Spline {
+    public var points: [PointF64]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        points: [PointF64])
+    {
+        self.points = points
+    }
+}
+
+extension Spline: Equatable, Hashable {
+    public static func == (lhs: Spline, rhs: Spline) -> Bool {
+        if lhs.points != rhs.points {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(points)
+    }
+}
+
+public struct FfiConverterTypeSpline: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Spline {
+        return
+            try Spline(
+                points: FfiConverterSequenceTypePointF64.read(from: &buf)
+            )
+    }
+
+    public static func write(_ value: Spline, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypePointF64.write(value.points, into: &buf)
+    }
+}
+
+public func FfiConverterTypeSpline_lift(_ buf: RustBuffer) throws -> Spline {
+    return try FfiConverterTypeSpline.lift(buf)
+}
+
+public func FfiConverterTypeSpline_lower(_ value: Spline) -> RustBuffer {
+    return FfiConverterTypeSpline.lower(value)
+}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum ColorMode {
+    case color
+    case binary
+}
+
+public struct FfiConverterTypeColorMode: FfiConverterRustBuffer {
+    typealias SwiftType = ColorMode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ColorMode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return .color
+
+        case 2: return .binary
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ColorMode, into buf: inout [UInt8]) {
+        switch value {
+        case .color:
+            writeInt(&buf, Int32(1))
+
+        case .binary:
+            writeInt(&buf, Int32(2))
+        }
+    }
+}
+
+public func FfiConverterTypeColorMode_lift(_ buf: RustBuffer) throws -> ColorMode {
+    return try FfiConverterTypeColorMode.lift(buf)
+}
+
+public func FfiConverterTypeColorMode_lower(_ value: ColorMode) -> RustBuffer {
+    return FfiConverterTypeColorMode.lower(value)
+}
+
+extension ColorMode: Equatable, Hashable {}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum Hierarchical {
+    case stacked
+    case cutout
+}
+
+public struct FfiConverterTypeHierarchical: FfiConverterRustBuffer {
+    typealias SwiftType = Hierarchical
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Hierarchical {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return .stacked
+
+        case 2: return .cutout
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Hierarchical, into buf: inout [UInt8]) {
+        switch value {
+        case .stacked:
+            writeInt(&buf, Int32(1))
+
+        case .cutout:
+            writeInt(&buf, Int32(2))
+        }
+    }
+}
+
+public func FfiConverterTypeHierarchical_lift(_ buf: RustBuffer) throws -> Hierarchical {
+    return try FfiConverterTypeHierarchical.lift(buf)
+}
+
+public func FfiConverterTypeHierarchical_lower(_ value: Hierarchical) -> RustBuffer {
+    return FfiConverterTypeHierarchical.lower(value)
+}
+
+extension Hierarchical: Equatable, Hashable {}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum LCompoundPathElement {
+    case pathI32(
+        path: PathI32
+    )
+    case pathF64(
+        path: PathF64
+    )
+    case spline(
+        spline: Spline
+    )
+}
+
+public struct FfiConverterTypeLCompoundPathElement: FfiConverterRustBuffer {
+    typealias SwiftType = LCompoundPathElement
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LCompoundPathElement {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return try .pathI32(
+                path: FfiConverterTypePathI32.read(from: &buf)
+            )
+
+        case 2: return try .pathF64(
+                path: FfiConverterTypePathF64.read(from: &buf)
+            )
+
+        case 3: return try .spline(
+                spline: FfiConverterTypeSpline.read(from: &buf)
+            )
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: LCompoundPathElement, into buf: inout [UInt8]) {
+        switch value {
+        case let .pathI32(path):
+            writeInt(&buf, Int32(1))
+            FfiConverterTypePathI32.write(path, into: &buf)
+
+        case let .pathF64(path):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypePathF64.write(path, into: &buf)
+
+        case let .spline(spline):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypeSpline.write(spline, into: &buf)
+        }
+    }
+}
+
+public func FfiConverterTypeLCompoundPathElement_lift(_ buf: RustBuffer) throws -> LCompoundPathElement {
+    return try FfiConverterTypeLCompoundPathElement.lift(buf)
+}
+
+public func FfiConverterTypeLCompoundPathElement_lower(_ value: LCompoundPathElement) -> RustBuffer {
+    return FfiConverterTypeLCompoundPathElement.lower(value)
+}
+
+extension LCompoundPathElement: Equatable, Hashable {}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum PathSimplifyMode {
+    case none
+    case polygon
+    case spline
+}
+
+public struct FfiConverterTypePathSimplifyMode: FfiConverterRustBuffer {
+    typealias SwiftType = PathSimplifyMode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PathSimplifyMode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return .none
+
+        case 2: return .polygon
+
+        case 3: return .spline
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PathSimplifyMode, into buf: inout [UInt8]) {
+        switch value {
+        case .none:
+            writeInt(&buf, Int32(1))
+
+        case .polygon:
+            writeInt(&buf, Int32(2))
+
+        case .spline:
+            writeInt(&buf, Int32(3))
+        }
+    }
+}
+
+public func FfiConverterTypePathSimplifyMode_lift(_ buf: RustBuffer) throws -> PathSimplifyMode {
+    return try FfiConverterTypePathSimplifyMode.lift(buf)
+}
+
+public func FfiConverterTypePathSimplifyMode_lower(_ value: PathSimplifyMode) -> RustBuffer {
+    return FfiConverterTypePathSimplifyMode.lower(value)
+}
+
+extension PathSimplifyMode: Equatable, Hashable {}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum Preset {
+    case bw
+    case poster
+    case photo
+}
+
+public struct FfiConverterTypePreset: FfiConverterRustBuffer {
+    typealias SwiftType = Preset
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Preset {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return .bw
+
+        case 2: return .poster
+
+        case 3: return .photo
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Preset, into buf: inout [UInt8]) {
+        switch value {
+        case .bw:
+            writeInt(&buf, Int32(1))
+
+        case .poster:
+            writeInt(&buf, Int32(2))
+
+        case .photo:
+            writeInt(&buf, Int32(3))
+        }
+    }
+}
+
+public func FfiConverterTypePreset_lift(_ buf: RustBuffer) throws -> Preset {
+    return try FfiConverterTypePreset.lift(buf)
+}
+
+public func FfiConverterTypePreset_lower(_ value: Preset) -> RustBuffer {
+    return FfiConverterTypePreset.lower(value)
+}
+
+extension Preset: Equatable, Hashable {}
 
 public enum SvgError {
-
-    
-    
     case ConversionError(message: String)
-    
 
     fileprivate static func uniffiErrorHandler(_ error: RustBuffer) throws -> Error {
         return try FfiConverterTypeSvgError.lift(error)
     }
 }
-
 
 public struct FfiConverterTypeSvgError: FfiConverterRustBuffer {
     typealias SwiftType = SvgError
@@ -831,14 +1294,9 @@ public struct FfiConverterTypeSvgError: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SvgError {
         let variant: Int32 = try readInt(&buf)
         switch variant {
-
-        
-
-        
-        case 1: return .ConversionError(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
+        case 1: return try .ConversionError(
+                message: FfiConverterString.read(from: &buf)
+            )
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -846,24 +1304,17 @@ public struct FfiConverterTypeSvgError: FfiConverterRustBuffer {
 
     public static func write(_ value: SvgError, into buf: inout [UInt8]) {
         switch value {
-
-        
-
-        
-        case .ConversionError(_ /* message is ignored*/):
+        case .ConversionError(_ /* message is ignored*/ ):
             writeInt(&buf, Int32(1))
-
-        
         }
     }
 }
 
-
 extension SvgError: Equatable, Hashable {}
 
-extension SvgError: Error { }
+extension SvgError: Error {}
 
-fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
+private struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
     typealias SwiftType = UInt32?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
@@ -884,29 +1335,7 @@ fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
     }
 }
 
-fileprivate struct FfiConverterSequenceUInt8: FfiConverterRustBuffer {
-    typealias SwiftType = [UInt8]
-
-    public static func write(_ value: [UInt8], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterUInt8.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [UInt8] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [UInt8]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterUInt8.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-fileprivate struct FfiConverterSequenceTypeLSvgPath: FfiConverterRustBuffer {
+private struct FfiConverterSequenceTypeLSvgPath: FfiConverterRustBuffer {
     typealias SwiftType = [LSvgPath]
 
     public static func write(_ value: [LSvgPath], into buf: inout [UInt8]) {
@@ -922,35 +1351,13 @@ fileprivate struct FfiConverterSequenceTypeLSvgPath: FfiConverterRustBuffer {
         var seq = [LSvgPath]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeLSvgPath.read(from: &buf))
+            try seq.append(FfiConverterTypeLSvgPath.read(from: &buf))
         }
         return seq
     }
 }
 
-fileprivate struct FfiConverterSequenceTypePathF64: FfiConverterRustBuffer {
-    typealias SwiftType = [PathF64]
-
-    public static func write(_ value: [PathF64], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypePathF64.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [PathF64] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [PathF64]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypePathF64.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-fileprivate struct FfiConverterSequenceTypePointF64: FfiConverterRustBuffer {
+private struct FfiConverterSequenceTypePointF64: FfiConverterRustBuffer {
     typealias SwiftType = [PointF64]
 
     public static func write(_ value: [PointF64], into buf: inout [UInt8]) {
@@ -966,19 +1373,89 @@ fileprivate struct FfiConverterSequenceTypePointF64: FfiConverterRustBuffer {
         var seq = [PointF64]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypePointF64.read(from: &buf))
+            try seq.append(FfiConverterTypePointF64.read(from: &buf))
         }
         return seq
     }
 }
-public func processImage(imageData: [UInt8], width: UInt32, height: UInt32) throws  -> LSvgFile {
-    return try  FfiConverterTypeLSvgFile.lift(
-        try rustCallWithError(FfiConverterTypeSvgError.lift) {
-    uniffi_vtracer_fn_func_process_image(
-        FfiConverterSequenceUInt8.lower(imageData),
-        FfiConverterUInt32.lower(width),
-        FfiConverterUInt32.lower(height),$0)
+
+private struct FfiConverterSequenceTypePointI32: FfiConverterRustBuffer {
+    typealias SwiftType = [PointI32]
+
+    public static func write(_ value: [PointI32], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypePointI32.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [PointI32] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [PointI32]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            try seq.append(FfiConverterTypePointI32.read(from: &buf))
+        }
+        return seq
+    }
 }
+
+private struct FfiConverterSequenceTypeLCompoundPathElement: FfiConverterRustBuffer {
+    typealias SwiftType = [LCompoundPathElement]
+
+    public static func write(_ value: [LCompoundPathElement], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeLCompoundPathElement.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [LCompoundPathElement] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [LCompoundPathElement]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            try seq.append(FfiConverterTypeLCompoundPathElement.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+public func convertImageToSvg(config: Config, imageData: Data, width: UInt32, height: UInt32) throws -> LSvgFile {
+    return try FfiConverterTypeLSvgFile.lift(
+        rustCallWithError(FfiConverterTypeSvgError.lift) {
+            uniffi_vtracer_fn_func_convert_image_to_svg(
+                FfiConverterTypeConfig.lower(config),
+                FfiConverterData.lower(imageData),
+                FfiConverterUInt32.lower(width),
+                FfiConverterUInt32.lower(height), $0
+            )
+        }
+    )
+}
+
+public func convertImageToSvgWithPreset(preset: Preset, imageData: Data, width: UInt32, height: UInt32) throws -> LSvgFile {
+    return try FfiConverterTypeLSvgFile.lift(
+        rustCallWithError(FfiConverterTypeSvgError.lift) {
+            uniffi_vtracer_fn_func_convert_image_to_svg_with_preset(
+                FfiConverterTypePreset.lower(preset),
+                FfiConverterData.lower(imageData),
+                FfiConverterUInt32.lower(width),
+                FfiConverterUInt32.lower(height), $0
+            )
+        }
+    )
+}
+
+public func makeSvgString(svgFile: LSvgFile) -> String {
+    return try! FfiConverterString.lift(
+        try! rustCall {
+            uniffi_vtracer_fn_func_make_svg_string(
+                FfiConverterTypeLSvgFile.lower(svgFile), $0
+            )
+        }
     )
 }
 
@@ -987,6 +1464,7 @@ private enum InitializationResult {
     case contractVersionMismatch
     case apiChecksumMismatch
 }
+
 // Use a global variables to perform the versioning checks. Swift ensures that
 // the code inside is only computed once.
 private var initializationResult: InitializationResult {
@@ -997,7 +1475,13 @@ private var initializationResult: InitializationResult {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_vtracer_checksum_func_process_image() != 38603) {
+    if uniffi_vtracer_checksum_func_convert_image_to_svg() != 1092 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_vtracer_checksum_func_convert_image_to_svg_with_preset() != 55382 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_vtracer_checksum_func_make_svg_string() != 9426 {
         return InitializationResult.apiChecksumMismatch
     }
 

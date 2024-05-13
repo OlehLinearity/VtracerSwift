@@ -12,6 +12,7 @@ visioncortex = { version = "0.8.4" }
 fastrand = "1.8"
 uniffi = { version = "0.26.1", features = ["cli"] }
 thiserror = "1.0.56"
+cap = "0.1.2"
 
 [build-dependencies]
 uniffi = { version = "0.26.1", features = ["build", "cli"] }
@@ -21,6 +22,5 @@ name = "vtracer"
 crate-type = ["lib", "staticlib"]
 
 [[bin]]
-features = ["cli"]
 name = "uniffi-bindgen"
 path = "src/uniffi-bindgen.rs"
