@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf build
+
 # We need the SDK Root
 export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
 
@@ -16,7 +18,7 @@ echo "Building for Mac Catalyst ARM64..."
 cargo +nightly build -Z build-std --target aarch64-apple-ios-macabi --release > /dev/null 2>&1
 
 echo "Building for ARM iOS..."
-cargo build --target aarch64-apple-ios--release > /dev/null 2>&1
+cargo build --target aarch64-apple-ios --release > /dev/null 2>&1
 
 
 # Build Fat Libraries:
