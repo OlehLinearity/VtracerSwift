@@ -11,6 +11,6 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "VtracerSwift",
-            path: "./VtracerSwift.xcframework")
+            path: "./spm/VtracerSwift.xcframework")
     ]
 )
