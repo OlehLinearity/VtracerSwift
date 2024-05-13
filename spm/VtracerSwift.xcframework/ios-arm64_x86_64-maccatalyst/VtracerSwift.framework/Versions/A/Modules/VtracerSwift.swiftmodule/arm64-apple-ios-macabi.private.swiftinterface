@@ -1,0 +1,305 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)
+// swift-module-flags: -target arm64-apple-ios15.0-macabi -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-bare-slash-regex -module-name VtracerSwift
+import Foundation
+import Swift
+@_exported import VtracerSwift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public struct Color {
+  public var r: Swift.UInt8
+  public var g: Swift.UInt8
+  public var b: Swift.UInt8
+  public var a: Swift.UInt8
+  public init(r: Swift.UInt8, g: Swift.UInt8, b: Swift.UInt8, a: Swift.UInt8)
+}
+extension VtracerSwift.Color : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.Color, rhs: VtracerSwift.Color) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypeColor {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.Color
+  public static func write(_ value: VtracerSwift.Color, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeColor_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.Color
+public func FfiConverterTypeColor_lower(_ value: VtracerSwift.Color) -> VtracerSwift.RustBuffer
+public struct Config {
+  public var colorMode: VtracerSwift.ColorMode
+  public var hierarchical: VtracerSwift.Hierarchical
+  public var filterSpeckle: Swift.UInt32
+  public var colorPrecision: Swift.Int32
+  public var layerDifference: Swift.Int32
+  public var mode: VtracerSwift.PathSimplifyMode
+  public var cornerThreshold: Swift.Int32
+  public var lengthThreshold: Swift.Double
+  public var maxIterations: Swift.UInt32
+  public var spliceThreshold: Swift.Int32
+  public var pathPrecision: Swift.UInt32?
+  public init(colorMode: VtracerSwift.ColorMode, hierarchical: VtracerSwift.Hierarchical, filterSpeckle: Swift.UInt32, colorPrecision: Swift.Int32, layerDifference: Swift.Int32, mode: VtracerSwift.PathSimplifyMode, cornerThreshold: Swift.Int32, lengthThreshold: Swift.Double, maxIterations: Swift.UInt32, spliceThreshold: Swift.Int32, pathPrecision: Swift.UInt32?)
+}
+extension VtracerSwift.Config : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.Config, rhs: VtracerSwift.Config) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypeConfig {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.Config
+  public static func write(_ value: VtracerSwift.Config, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeConfig_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.Config
+public func FfiConverterTypeConfig_lower(_ value: VtracerSwift.Config) -> VtracerSwift.RustBuffer
+public struct LCompoundPath {
+  public var paths: [VtracerSwift.LCompoundPathElement]
+  public init(paths: [VtracerSwift.LCompoundPathElement])
+}
+extension VtracerSwift.LCompoundPath : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.LCompoundPath, rhs: VtracerSwift.LCompoundPath) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypeLCompoundPath {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.LCompoundPath
+  public static func write(_ value: VtracerSwift.LCompoundPath, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeLCompoundPath_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.LCompoundPath
+public func FfiConverterTypeLCompoundPath_lower(_ value: VtracerSwift.LCompoundPath) -> VtracerSwift.RustBuffer
+public struct LSvgFile {
+  public var paths: [VtracerSwift.LSvgPath]
+  public var width: Swift.UInt32
+  public var height: Swift.UInt32
+  public var pathPrecision: Swift.UInt32?
+  public init(paths: [VtracerSwift.LSvgPath], width: Swift.UInt32, height: Swift.UInt32, pathPrecision: Swift.UInt32?)
+}
+extension VtracerSwift.LSvgFile : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.LSvgFile, rhs: VtracerSwift.LSvgFile) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypeLSvgFile {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.LSvgFile
+  public static func write(_ value: VtracerSwift.LSvgFile, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeLSvgFile_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.LSvgFile
+public func FfiConverterTypeLSvgFile_lower(_ value: VtracerSwift.LSvgFile) -> VtracerSwift.RustBuffer
+public struct LSvgPath {
+  public var path: VtracerSwift.LCompoundPath
+  public var color: VtracerSwift.Color
+  public init(path: VtracerSwift.LCompoundPath, color: VtracerSwift.Color)
+}
+extension VtracerSwift.LSvgPath : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.LSvgPath, rhs: VtracerSwift.LSvgPath) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypeLSvgPath {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.LSvgPath
+  public static func write(_ value: VtracerSwift.LSvgPath, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeLSvgPath_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.LSvgPath
+public func FfiConverterTypeLSvgPath_lower(_ value: VtracerSwift.LSvgPath) -> VtracerSwift.RustBuffer
+public struct PathF64 {
+  public var path: [VtracerSwift.PointF64]
+  public init(path: [VtracerSwift.PointF64])
+}
+extension VtracerSwift.PathF64 : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.PathF64, rhs: VtracerSwift.PathF64) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypePathF64 {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.PathF64
+  public static func write(_ value: VtracerSwift.PathF64, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypePathF64_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.PathF64
+public func FfiConverterTypePathF64_lower(_ value: VtracerSwift.PathF64) -> VtracerSwift.RustBuffer
+public struct PathI32 {
+  public var path: [VtracerSwift.PointI32]
+  public init(path: [VtracerSwift.PointI32])
+}
+extension VtracerSwift.PathI32 : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.PathI32, rhs: VtracerSwift.PathI32) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypePathI32 {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.PathI32
+  public static func write(_ value: VtracerSwift.PathI32, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypePathI32_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.PathI32
+public func FfiConverterTypePathI32_lower(_ value: VtracerSwift.PathI32) -> VtracerSwift.RustBuffer
+public struct PointF64 {
+  public var x: Swift.Double
+  public var y: Swift.Double
+  public init(x: Swift.Double, y: Swift.Double)
+}
+extension VtracerSwift.PointF64 : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.PointF64, rhs: VtracerSwift.PointF64) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypePointF64 {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.PointF64
+  public static func write(_ value: VtracerSwift.PointF64, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypePointF64_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.PointF64
+public func FfiConverterTypePointF64_lower(_ value: VtracerSwift.PointF64) -> VtracerSwift.RustBuffer
+public struct PointI32 {
+  public var x: Swift.Int32
+  public var y: Swift.Int32
+  public init(x: Swift.Int32, y: Swift.Int32)
+}
+extension VtracerSwift.PointI32 : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.PointI32, rhs: VtracerSwift.PointI32) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypePointI32 {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.PointI32
+  public static func write(_ value: VtracerSwift.PointI32, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypePointI32_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.PointI32
+public func FfiConverterTypePointI32_lower(_ value: VtracerSwift.PointI32) -> VtracerSwift.RustBuffer
+public struct Spline {
+  public var points: [VtracerSwift.PointF64]
+  public init(points: [VtracerSwift.PointF64])
+}
+extension VtracerSwift.Spline : Swift.Equatable, Swift.Hashable {
+  public static func == (lhs: VtracerSwift.Spline, rhs: VtracerSwift.Spline) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FfiConverterTypeSpline {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.Spline
+  public static func write(_ value: VtracerSwift.Spline, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeSpline_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.Spline
+public func FfiConverterTypeSpline_lower(_ value: VtracerSwift.Spline) -> VtracerSwift.RustBuffer
+public enum ColorMode {
+  case color
+  case binary
+}
+public struct FfiConverterTypeColorMode {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.ColorMode
+  public static func write(_ value: VtracerSwift.ColorMode, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeColorMode_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.ColorMode
+public func FfiConverterTypeColorMode_lower(_ value: VtracerSwift.ColorMode) -> VtracerSwift.RustBuffer
+extension VtracerSwift.ColorMode : Swift.Equatable, Swift.Hashable {
+  public static func == (a: VtracerSwift.ColorMode, b: VtracerSwift.ColorMode) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum Hierarchical {
+  case stacked
+  case cutout
+}
+public struct FfiConverterTypeHierarchical {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.Hierarchical
+  public static func write(_ value: VtracerSwift.Hierarchical, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeHierarchical_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.Hierarchical
+public func FfiConverterTypeHierarchical_lower(_ value: VtracerSwift.Hierarchical) -> VtracerSwift.RustBuffer
+extension VtracerSwift.Hierarchical : Swift.Equatable, Swift.Hashable {
+  public static func == (a: VtracerSwift.Hierarchical, b: VtracerSwift.Hierarchical) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum LCompoundPathElement {
+  case pathI32(path: VtracerSwift.PathI32)
+  case pathF64(path: VtracerSwift.PathF64)
+  case spline(spline: VtracerSwift.Spline)
+}
+public struct FfiConverterTypeLCompoundPathElement {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.LCompoundPathElement
+  public static func write(_ value: VtracerSwift.LCompoundPathElement, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypeLCompoundPathElement_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.LCompoundPathElement
+public func FfiConverterTypeLCompoundPathElement_lower(_ value: VtracerSwift.LCompoundPathElement) -> VtracerSwift.RustBuffer
+extension VtracerSwift.LCompoundPathElement : Swift.Equatable, Swift.Hashable {
+  public static func == (a: VtracerSwift.LCompoundPathElement, b: VtracerSwift.LCompoundPathElement) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum PathSimplifyMode {
+  case none
+  case polygon
+  case spline
+}
+public struct FfiConverterTypePathSimplifyMode {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.PathSimplifyMode
+  public static func write(_ value: VtracerSwift.PathSimplifyMode, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypePathSimplifyMode_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.PathSimplifyMode
+public func FfiConverterTypePathSimplifyMode_lower(_ value: VtracerSwift.PathSimplifyMode) -> VtracerSwift.RustBuffer
+extension VtracerSwift.PathSimplifyMode : Swift.Equatable, Swift.Hashable {
+  public static func == (a: VtracerSwift.PathSimplifyMode, b: VtracerSwift.PathSimplifyMode) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum Preset {
+  case bw
+  case poster
+  case photo
+}
+public struct FfiConverterTypePreset {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.Preset
+  public static func write(_ value: VtracerSwift.Preset, into buf: inout [Swift.UInt8])
+}
+public func FfiConverterTypePreset_lift(_ buf: VtracerSwift.RustBuffer) throws -> VtracerSwift.Preset
+public func FfiConverterTypePreset_lower(_ value: VtracerSwift.Preset) -> VtracerSwift.RustBuffer
+extension VtracerSwift.Preset : Swift.Equatable, Swift.Hashable {
+  public static func == (a: VtracerSwift.Preset, b: VtracerSwift.Preset) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum SvgError {
+  case ConversionError(message: Swift.String)
+}
+public struct FfiConverterTypeSvgError {
+  public static func read(from buf: inout (data: Foundation.Data, offset: Foundation.Data.Index)) throws -> VtracerSwift.SvgError
+  public static func write(_ value: VtracerSwift.SvgError, into buf: inout [Swift.UInt8])
+}
+extension VtracerSwift.SvgError : Swift.Equatable, Swift.Hashable {
+  public static func == (a: VtracerSwift.SvgError, b: VtracerSwift.SvgError) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension VtracerSwift.SvgError : Swift.Error {
+}
+public func convertImageToSvg(config: VtracerSwift.Config, imageData: Foundation.Data, width: Swift.UInt32, height: Swift.UInt32) throws -> VtracerSwift.LSvgFile
+public func convertImageToSvgWithPreset(preset: VtracerSwift.Preset, imageData: Foundation.Data, width: Swift.UInt32, height: Swift.UInt32) throws -> VtracerSwift.LSvgFile
+public func makeSvgString(svgFile: VtracerSwift.LSvgFile) -> Swift.String

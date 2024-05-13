@@ -1,0 +1,12 @@
+//
+//  MacCatalyst.xcconfig
+//  VtracerSwift
+//
+//  Created by Oleh Pidhirniak on 12.02.2024.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+
+LIBRARY_SEARCH_PATHS = $(inherited) $(PROJECT_DIR)/../build/fat
+OTHER_LDFLAGS = $(inherited) -lvtracer-catalyst

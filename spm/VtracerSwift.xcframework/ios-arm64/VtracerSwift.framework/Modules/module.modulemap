@@ -1,0 +1,11 @@
+framework module VtracerSwift {
+  umbrella header "VtracerSwift.h"
+  export *
+
+  module * { export * }
+}
+
+module VtracerSwift.Swift {
+  header "VtracerSwift-Swift.h"
+  requires objc
+}
